@@ -1,0 +1,42 @@
+name: Build stable-diffusion.cpp (Windows CUDA 13)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout stable-diffusion.cpp
+        uses: actions/checkout@v4
+        with:
+          repository: leejet/stable-diffusion.cpp
+          submodules: recursive
+
+      - name: Install CUDA 13 Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.21
+        with:
+          cuda: '13.0.0'
+          sub-packages: '["nvcc", "cublas", "cublas_dev", "cudart", "curand", "curand_dev"]'
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DSD_CUDA=ON `
+            -DCMAKE_CUDA_ARCHITECTURES="75;86;89;120"
+
+      - name: Build Release Binaries
+        run: cmake --build build --config Release -j
+
+      - name: Package Binaries
+        run: |
+          mkdir dist
+          Copy-Item build\bin\Release\*.exe dist\
+          Copy-Item build\bin\Release\*.dll dist\ -ErrorAction SilentlyContinue
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sd-cpp-win-cuda13-x64
+          path: dist/

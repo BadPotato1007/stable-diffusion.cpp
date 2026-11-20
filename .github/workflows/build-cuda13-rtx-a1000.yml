@@ -19,7 +19,7 @@ jobs:
         uses: Jimver/cuda-toolkit@v0.2.36
         with:
           cuda: '13.0.0'
-          sub-packages: '["nvcc", "cublas", "cublas_dev", "cudart", "curand", "curand_dev"]'
+          sub-packages: '["nvcc", "cuda_crt", "cuda_cudart", "cudart", "cublas", "cublas_dev", "curand", "curand_dev"]'
 
       - name: Setup MSVC & Ninja
         uses: ilammy/msvc-dev-cmd@v1
@@ -29,7 +29,8 @@ jobs:
           cmake -B build -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
             -DSD_CUDA=ON `
-            -DCMAKE_CUDA_ARCHITECTURES="86"
+            -DCMAKE_CUDA_ARCHITECTURES="86" `
+            -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler"
 
       - name: Build Release Binaries
         run: cmake --build build --config Release -j

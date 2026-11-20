@@ -1,28 +1,33 @@
-name: Build stable-diffusion.cpp (RTX A1000 / CUDA 13)
+name: Build stable-diffusion.cpp (Windows CUDA 13 - RTX A1000)
 
 on:
+  push:
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-windows-cuda13:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout stable-diffusion.cpp
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: leejet/stable-diffusion.cpp
           submodules: recursive
 
       - name: Install CUDA 13 Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.21
+        uses: Jimver/cuda-toolkit@v0.2.36
         with:
           cuda: '13.0.0'
           sub-packages: '["nvcc", "cublas", "cublas_dev", "cudart", "curand", "curand_dev"]'
 
+      - name: Setup MSVC & Ninja
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure CMake
         run: |
-          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+          cmake -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
             -DSD_CUDA=ON `
             -DCMAKE_CUDA_ARCHITECTURES="86"
 
@@ -32,11 +37,11 @@ jobs:
       - name: Package Binaries
         run: |
           mkdir dist
-          Copy-Item build\bin\Release\*.exe dist\
-          Copy-Item build\bin\Release\*.dll dist\ -ErrorAction SilentlyContinue
+          Copy-Item build\bin\*.exe dist\
+          Copy-Item build\bin\*.dll dist\ -ErrorAction SilentlyContinue
 
-      - name: Upload Artifact
+      - name: Upload Windows CUDA 13 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sd-cpp-win-rtx-a1000-cuda13
+          name: sd-master-bin-win-cuda13-rtx-a1000
           path: dist/
